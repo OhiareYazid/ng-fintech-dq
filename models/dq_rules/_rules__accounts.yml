@@ -1,0 +1,88 @@
+# Rule library: accounts (core banking).
+
+models:
+  - name: stg_accounts
+    description: Accounts, typed, every source row kept (including re-delivered CDC rows).
+    columns:
+      - name: account_id
+        data_tests:
+          - dq_unique:
+              name: dq_acc_001_account_id_unique
+              config:
+                meta:
+                  rule_id: DQ-ACC-001
+                  rule_name: Account ID unique
+                  dimension: uniqueness
+                  dataset: accounts
+                  severity: critical
+                  action: DEDUPE
+                  owner: Core Banking Operations
+                  why: Duplicate account rows fan out every join from transactions and double balances.
+
+      - name: customer_id
+        data_tests:
+          - dq_relationships:
+              name: dq_acc_002_customer_exists
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id
+              config:
+                meta:
+                  rule_id: DQ-ACC-002
+                  rule_name: Account owner exists in CIF
+                  dimension: referential_integrity
+                  dataset: accounts
+                  severity: critical
+                  action: FLAG
+                  owner: Core Banking Operations
+                  why: An account with no owner has no KYC tier, no AML profile and cannot be reported to regulators.
+
+      - name: account_number
+        data_tests:
+          - dq_valid_nuban:
+              name: dq_acc_003_account_number_valid_nuban
+              arguments:
+                bank_code: "{{ var('home_bank_code') }}"
+              config:
+                meta:
+                  rule_id: DQ-ACC-003
+                  rule_name: Account number is a valid NUBAN (CBN check digit)
+                  dimension: validity
+                  dataset: accounts
+                  severity: critical
+                  action: FLAG
+                  owner: Core Banking Operations
+                  why: An invalid NUBAN cannot receive NIP inflows; funds sent to it are rejected or misrouted.
+
+      - name: closed_at
+        data_tests:
+          - dq_not_null:
+              name: dq_acc_004_closed_at_present_when_closed
+              config:
+                where: "status = 'CLOSED'"
+                meta:
+                  rule_id: DQ-ACC-004
+                  rule_name: Closure date present on closed accounts
+                  dimension: completeness
+                  dataset: accounts
+                  severity: medium
+                  action: FLAG
+                  owner: Core Banking Operations
+                  why: Without a closure date, post-closure activity controls (DQ-TXN-017) cannot run.
+
+      - name: status
+        data_tests:
+          - dq_accepted_values:
+              name: dq_acc_005_status_valid
+              arguments:
+                values: [ACTIVE, DORMANT, FROZEN, CLOSED]
+              config:
+                meta:
+                  rule_id: DQ-ACC-005
+                  rule_name: Account status recognised
+                  dimension: validity
+                  dataset: accounts
+                  severity: high
+                  action: FLAG
+                  owner: Core Banking Operations
+                  why: Status drives debit blocks, dormancy reporting and closure controls.

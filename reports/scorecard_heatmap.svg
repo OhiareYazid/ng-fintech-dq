@@ -1,0 +1,217 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1030" height="478" viewBox="0 0 1030 478" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" role="img" aria-label="DQ score by table and dimension">
+<rect width="1030" height="478" rx="12" fill="#fcfcfb"/>
+<text x="24" y="36" font-size="17" font-weight="600" fill="#1f1f1e">DQ score by table and dimension</text>
+<text x="24" y="58" font-size="12" fill="#6b6b67">Batch 2026-10-25 14:00 WAT · severity-weighted rule pass rate · 47 scored rules · a critical breach makes a cell RED</text>
+<text x="152" y="82" font-size="12" font-weight="400" fill="#6b6b67">Completeness</text>
+<text x="274" y="82" font-size="12" font-weight="400" fill="#6b6b67">Validity</text>
+<text x="396" y="82" font-size="12" font-weight="400" fill="#6b6b67">Uniqueness</text>
+<text x="518" y="82" font-size="12" font-weight="400" fill="#6b6b67">Ref. integrity</text>
+<text x="640" y="82" font-size="12" font-weight="400" fill="#6b6b67">Consistency</text>
+<text x="762" y="82" font-size="12" font-weight="400" fill="#6b6b67">Freshness</text>
+<text x="896" y="82" font-size="12" font-weight="600" fill="#6b6b67">Overall</text>
+<text x="24" y="126.0" font-size="13" font-weight="400" fill="#1f1f1e">Customers</text>
+<g><title>Customers · Completeness: 97.8% AMBER. 4 rules, 1 breached (0 critical), 773 failing rows</title>
+<rect x="140" y="92" width="118" height="58" rx="6" fill="#fcf0d7"/>
+<circle cx="242" cy="110" r="5" fill="#fab219"/>
+<text x="152" y="117" font-size="16" font-weight="600" fill="#1f1f1e">97.8%</text>
+<text x="152" y="136" font-size="11" fill="#6b6b67">AMBER · 1 breach</text>
+</g>
+<g><title>Customers · Validity: 99.4% AMBER. 6 rules, 5 breached (0 critical), 165 failing rows</title>
+<rect x="262" y="92" width="118" height="58" rx="6" fill="#fcf0d7"/>
+<circle cx="364" cy="110" r="5" fill="#fab219"/>
+<text x="274" y="117" font-size="16" font-weight="600" fill="#1f1f1e">99.4%</text>
+<text x="274" y="136" font-size="11" fill="#6b6b67">AMBER · 5 breaches</text>
+</g>
+<g><title>Customers · Uniqueness: 98.7% AMBER. 2 rules, 1 breached (0 critical), 120 failing rows</title>
+<rect x="384" y="92" width="118" height="58" rx="6" fill="#fcf0d7"/>
+<circle cx="486" cy="110" r="5" fill="#fab219"/>
+<text x="396" y="117" font-size="16" font-weight="600" fill="#1f1f1e">98.7%</text>
+<text x="396" y="136" font-size="11" fill="#6b6b67">AMBER · 1 breach</text>
+</g>
+<rect x="506.5" y="92.5" width="117" height="57" rx="6" fill="none" stroke="#e4e4e0" stroke-dasharray="3 3"/>
+<text x="518" y="126" font-size="11" fill="#6b6b67">no rules</text>
+<rect x="628.5" y="92.5" width="117" height="57" rx="6" fill="none" stroke="#e4e4e0" stroke-dasharray="3 3"/>
+<text x="640" y="126" font-size="11" fill="#6b6b67">no rules</text>
+<g><title>Customers · Freshness: 100.0% GREEN. 1 rules, 0 breached (0 critical), 0 failing rows</title>
+<rect x="750" y="92" width="118" height="58" rx="6" fill="#d6eed5"/>
+<circle cx="852" cy="110" r="5" fill="#0ca30c"/>
+<text x="762" y="117" font-size="16" font-weight="600" fill="#1f1f1e">100.0%</text>
+<text x="762" y="136" font-size="11" fill="#6b6b67">GREEN · all pass</text>
+</g>
+<g><title>Customers · Overall: 98.8% AMBER. 13 rules, 7 breached (0 critical), 1,058 failing rows</title>
+<rect x="884" y="92" width="118" height="58" rx="6" fill="#fcf0d7"/>
+<circle cx="986" cy="110" r="5" fill="#fab219"/>
+<text x="896" y="117" font-size="16" font-weight="600" fill="#1f1f1e">98.8%</text>
+<text x="896" y="136" font-size="11" fill="#6b6b67">AMBER · 7 breaches</text>
+</g>
+<text x="24" y="188.0" font-size="13" font-weight="400" fill="#1f1f1e">Accounts</text>
+<g><title>Accounts · Completeness: 97.4% AMBER. 2 rules, 1 breached (0 critical), 15 failing rows</title>
+<rect x="140" y="154" width="118" height="58" rx="6" fill="#fcf0d7"/>
+<circle cx="242" cy="172" r="5" fill="#fab219"/>
+<text x="152" y="179" font-size="16" font-weight="600" fill="#1f1f1e">97.4%</text>
+<text x="152" y="198" font-size="11" fill="#6b6b67">AMBER · 1 breach</text>
+</g>
+<g><title>Accounts · Validity: 99.6% RED. 2 rules, 1 breached (1 critical), 40 failing rows</title>
+<rect x="262" y="154" width="118" height="58" rx="6" fill="#f5dddc"/>
+<circle cx="364" cy="172" r="5" fill="#d03b3b"/>
+<text x="274" y="179" font-size="16" font-weight="600" fill="#1f1f1e">99.6%</text>
+<text x="274" y="198" font-size="11" fill="#6b6b67">RED · 1 critical</text>
+</g>
+<g><title>Accounts · Uniqueness: 98.7% RED. 1 rules, 1 breached (1 critical), 80 failing rows</title>
+<rect x="384" y="154" width="118" height="58" rx="6" fill="#f5dddc"/>
+<circle cx="486" cy="172" r="5" fill="#d03b3b"/>
+<text x="396" y="179" font-size="16" font-weight="600" fill="#1f1f1e">98.7%</text>
+<text x="396" y="198" font-size="11" fill="#6b6b67">RED · 1 critical</text>
+</g>
+<g><title>Accounts · Ref. integrity: 99.6% RED. 1 rules, 1 breached (1 critical), 25 failing rows</title>
+<rect x="506" y="154" width="118" height="58" rx="6" fill="#f5dddc"/>
+<circle cx="608" cy="172" r="5" fill="#d03b3b"/>
+<text x="518" y="179" font-size="16" font-weight="600" fill="#1f1f1e">99.6%</text>
+<text x="518" y="198" font-size="11" fill="#6b6b67">RED · 1 critical</text>
+</g>
+<rect x="628.5" y="154.5" width="117" height="57" rx="6" fill="none" stroke="#e4e4e0" stroke-dasharray="3 3"/>
+<text x="640" y="188" font-size="11" fill="#6b6b67">no rules</text>
+<g><title>Accounts · Freshness: 100.0% GREEN. 1 rules, 0 breached (0 critical), 0 failing rows</title>
+<rect x="750" y="154" width="118" height="58" rx="6" fill="#d6eed5"/>
+<circle cx="852" cy="172" r="5" fill="#0ca30c"/>
+<text x="762" y="179" font-size="16" font-weight="600" fill="#1f1f1e">100.0%</text>
+<text x="762" y="198" font-size="11" fill="#6b6b67">GREEN · all pass</text>
+</g>
+<g><title>Accounts · Overall: 99.0% RED. 7 rules, 4 breached (3 critical), 160 failing rows</title>
+<rect x="884" y="154" width="118" height="58" rx="6" fill="#f5dddc"/>
+<circle cx="986" cy="172" r="5" fill="#d03b3b"/>
+<text x="896" y="179" font-size="16" font-weight="600" fill="#1f1f1e">99.0%</text>
+<text x="896" y="198" font-size="11" fill="#6b6b67">RED · 3 critical</text>
+</g>
+<text x="24" y="250.0" font-size="13" font-weight="400" fill="#1f1f1e">Terminals</text>
+<g><title>Terminals · Completeness: 100.0% GREEN. 1 rules, 0 breached (0 critical), 0 failing rows</title>
+<rect x="140" y="216" width="118" height="58" rx="6" fill="#d6eed5"/>
+<circle cx="242" cy="234" r="5" fill="#0ca30c"/>
+<text x="152" y="241" font-size="16" font-weight="600" fill="#1f1f1e">100.0%</text>
+<text x="152" y="260" font-size="11" fill="#6b6b67">GREEN · all pass</text>
+</g>
+<g><title>Terminals · Validity: 100.0% GREEN. 1 rules, 0 breached (0 critical), 0 failing rows</title>
+<rect x="262" y="216" width="118" height="58" rx="6" fill="#d6eed5"/>
+<circle cx="364" cy="234" r="5" fill="#0ca30c"/>
+<text x="274" y="241" font-size="16" font-weight="600" fill="#1f1f1e">100.0%</text>
+<text x="274" y="260" font-size="11" fill="#6b6b67">GREEN · all pass</text>
+</g>
+<g><title>Terminals · Uniqueness: 98.2% AMBER. 2 rules, 1 breached (0 critical), 16 failing rows</title>
+<rect x="384" y="216" width="118" height="58" rx="6" fill="#fcf0d7"/>
+<circle cx="486" cy="234" r="5" fill="#fab219"/>
+<text x="396" y="241" font-size="16" font-weight="600" fill="#1f1f1e">98.2%</text>
+<text x="396" y="260" font-size="11" fill="#6b6b67">AMBER · 1 breach</text>
+</g>
+<g><title>Terminals · Ref. integrity: 98.5% AMBER. 1 rules, 1 breached (0 critical), 6 failing rows</title>
+<rect x="506" y="216" width="118" height="58" rx="6" fill="#fcf0d7"/>
+<circle cx="608" cy="234" r="5" fill="#fab219"/>
+<text x="518" y="241" font-size="16" font-weight="600" fill="#1f1f1e">98.5%</text>
+<text x="518" y="260" font-size="11" fill="#6b6b67">AMBER · 1 breach</text>
+</g>
+<rect x="628.5" y="216.5" width="117" height="57" rx="6" fill="none" stroke="#e4e4e0" stroke-dasharray="3 3"/>
+<text x="640" y="250" font-size="11" fill="#6b6b67">no rules</text>
+<g><title>Terminals · Freshness: 0.0% RED. 1 rules, 1 breached (0 critical), 1 failing rows</title>
+<rect x="750" y="216" width="118" height="58" rx="6" fill="#f5dddc"/>
+<circle cx="852" cy="234" r="5" fill="#d03b3b"/>
+<text x="762" y="241" font-size="16" font-weight="600" fill="#1f1f1e">0.0%</text>
+<text x="762" y="260" font-size="11" fill="#6b6b67">RED · 1 breach</text>
+</g>
+<g><title>Terminals · Overall: 81.3% RED. 6 rules, 3 breached (0 critical), 23 failing rows</title>
+<rect x="884" y="216" width="118" height="58" rx="6" fill="#f5dddc"/>
+<circle cx="986" cy="234" r="5" fill="#d03b3b"/>
+<text x="896" y="241" font-size="16" font-weight="600" fill="#1f1f1e">81.3%</text>
+<text x="896" y="260" font-size="11" fill="#6b6b67">RED · 3 breaches</text>
+</g>
+<text x="24" y="312.0" font-size="13" font-weight="400" fill="#1f1f1e">Transactions</text>
+<g><title>Transactions · Completeness: 77.7% RED. 5 rules, 3 breached (2 critical), 76 failing rows</title>
+<rect x="140" y="278" width="118" height="58" rx="6" fill="#f5dddc"/>
+<circle cx="242" cy="296" r="5" fill="#d03b3b"/>
+<text x="152" y="303" font-size="16" font-weight="600" fill="#1f1f1e">77.7%</text>
+<text x="152" y="322" font-size="11" fill="#6b6b67">RED · 2 critical</text>
+</g>
+<g><title>Transactions · Validity: 99.9% RED. 4 rules, 3 breached (1 critical), 90 failing rows</title>
+<rect x="262" y="278" width="118" height="58" rx="6" fill="#f5dddc"/>
+<circle cx="364" cy="296" r="5" fill="#d03b3b"/>
+<text x="274" y="303" font-size="16" font-weight="600" fill="#1f1f1e">99.9%</text>
+<text x="274" y="322" font-size="11" fill="#6b6b67">RED · 1 critical</text>
+</g>
+<g><title>Transactions · Uniqueness: 99.2% RED. 3 rules, 3 breached (2 critical), 1,150 failing rows</title>
+<rect x="384" y="278" width="118" height="58" rx="6" fill="#f5dddc"/>
+<circle cx="486" cy="296" r="5" fill="#d03b3b"/>
+<text x="396" y="303" font-size="16" font-weight="600" fill="#1f1f1e">99.2%</text>
+<text x="396" y="322" font-size="11" fill="#6b6b67">RED · 2 critical</text>
+</g>
+<g><title>Transactions · Ref. integrity: 99.8% RED. 3 rules, 3 breached (1 critical), 145 failing rows</title>
+<rect x="506" y="278" width="118" height="58" rx="6" fill="#f5dddc"/>
+<circle cx="608" cy="296" r="5" fill="#d03b3b"/>
+<text x="518" y="303" font-size="16" font-weight="600" fill="#1f1f1e">99.8%</text>
+<text x="518" y="322" font-size="11" fill="#6b6b67">RED · 1 critical</text>
+</g>
+<g><title>Transactions · Consistency: 99.9% AMBER. 4 rules, 4 breached (0 critical), 145 failing rows</title>
+<rect x="628" y="278" width="118" height="58" rx="6" fill="#fcf0d7"/>
+<circle cx="730" cy="296" r="5" fill="#fab219"/>
+<text x="640" y="303" font-size="16" font-weight="600" fill="#1f1f1e">99.9%</text>
+<text x="640" y="322" font-size="11" fill="#6b6b67">AMBER · 4 breaches</text>
+</g>
+<g><title>Transactions · Freshness: 91.4% RED. 2 rules, 1 breached (0 critical), 1 failing rows</title>
+<rect x="750" y="278" width="118" height="58" rx="6" fill="#f5dddc"/>
+<circle cx="852" cy="296" r="5" fill="#d03b3b"/>
+<text x="762" y="303" font-size="16" font-weight="600" fill="#1f1f1e">91.4%</text>
+<text x="762" y="322" font-size="11" fill="#6b6b67">RED · 1 breach</text>
+</g>
+<g><title>Transactions · Overall: 93.0% RED. 21 rules, 17 breached (6 critical), 1,607 failing rows</title>
+<rect x="884" y="278" width="118" height="58" rx="6" fill="#f5dddc"/>
+<circle cx="986" cy="296" r="5" fill="#d03b3b"/>
+<text x="896" y="303" font-size="16" font-weight="600" fill="#1f1f1e">93.0%</text>
+<text x="896" y="322" font-size="11" fill="#6b6b67">RED · 6 critical</text>
+</g>
+<text x="24" y="386.0" font-size="13" font-weight="600" fill="#1f1f1e">All tables</text>
+<g><title>All tables · Completeness: 87.8% RED. 12 rules, 5 breached (2 critical), 864 failing rows</title>
+<rect x="140" y="352" width="118" height="58" rx="6" fill="#f5dddc"/>
+<circle cx="242" cy="370" r="5" fill="#d03b3b"/>
+<text x="152" y="377" font-size="16" font-weight="600" fill="#1f1f1e">87.8%</text>
+<text x="152" y="396" font-size="11" fill="#6b6b67">RED · 2 critical</text>
+</g>
+<g><title>All tables · Validity: 99.7% RED. 13 rules, 9 breached (2 critical), 295 failing rows</title>
+<rect x="262" y="352" width="118" height="58" rx="6" fill="#f5dddc"/>
+<circle cx="364" cy="370" r="5" fill="#d03b3b"/>
+<text x="274" y="377" font-size="16" font-weight="600" fill="#1f1f1e">99.7%</text>
+<text x="274" y="396" font-size="11" fill="#6b6b67">RED · 2 critical</text>
+</g>
+<g><title>All tables · Uniqueness: 98.8% RED. 8 rules, 6 breached (3 critical), 1,366 failing rows</title>
+<rect x="384" y="352" width="118" height="58" rx="6" fill="#f5dddc"/>
+<circle cx="486" cy="370" r="5" fill="#d03b3b"/>
+<text x="396" y="377" font-size="16" font-weight="600" fill="#1f1f1e">98.8%</text>
+<text x="396" y="396" font-size="11" fill="#6b6b67">RED · 3 critical</text>
+</g>
+<g><title>All tables · Ref. integrity: 99.5% RED. 5 rules, 5 breached (2 critical), 176 failing rows</title>
+<rect x="506" y="352" width="118" height="58" rx="6" fill="#f5dddc"/>
+<circle cx="608" cy="370" r="5" fill="#d03b3b"/>
+<text x="518" y="377" font-size="16" font-weight="600" fill="#1f1f1e">99.5%</text>
+<text x="518" y="396" font-size="11" fill="#6b6b67">RED · 2 critical</text>
+</g>
+<g><title>All tables · Consistency: 99.9% AMBER. 4 rules, 4 breached (0 critical), 145 failing rows</title>
+<rect x="628" y="352" width="118" height="58" rx="6" fill="#fcf0d7"/>
+<circle cx="730" cy="370" r="5" fill="#fab219"/>
+<text x="640" y="377" font-size="16" font-weight="600" fill="#1f1f1e">99.9%</text>
+<text x="640" y="396" font-size="11" fill="#6b6b67">AMBER · 4 breaches</text>
+</g>
+<g><title>All tables · Freshness: 77.5% RED. 5 rules, 2 breached (0 critical), 2 failing rows</title>
+<rect x="750" y="352" width="118" height="58" rx="6" fill="#f5dddc"/>
+<circle cx="852" cy="370" r="5" fill="#d03b3b"/>
+<text x="762" y="377" font-size="16" font-weight="600" fill="#1f1f1e">77.5%</text>
+<text x="762" y="396" font-size="11" fill="#6b6b67">RED · 2 breaches</text>
+</g>
+<g><title>All tables · Overall: 94.0% RED. 47 rules, 31 breached (9 critical), 2,848 failing rows</title>
+<rect x="884" y="352" width="118" height="58" rx="6" fill="#f5dddc"/>
+<circle cx="986" cy="370" r="5" fill="#d03b3b"/>
+<text x="896" y="377" font-size="16" font-weight="600" fill="#1f1f1e">94.0%</text>
+<text x="896" y="396" font-size="11" fill="#6b6b67">RED · 9 critical</text>
+</g>
+<circle cx="29" cy="440" r="5" fill="#0ca30c"/>
+<text x="40" y="444" font-size="12" fill="#1f1f1e"><tspan font-weight="600">GREEN</tspan> <tspan fill="#6b6b67">≥ 99% and no high/medium breach</tspan></text>
+<circle cx="299" cy="440" r="5" fill="#fab219"/>
+<text x="310" y="444" font-size="12" fill="#1f1f1e"><tspan font-weight="600">AMBER</tspan> <tspan fill="#6b6b67">a high/medium breach or &lt; 99%</tspan></text>
+<circle cx="569" cy="440" r="5" fill="#d03b3b"/>
+<text x="580" y="444" font-size="12" fill="#1f1f1e"><tspan font-weight="600">RED</tspan> <tspan fill="#6b6b67">a critical breach or &lt; 95%</tspan></text>
+</svg>

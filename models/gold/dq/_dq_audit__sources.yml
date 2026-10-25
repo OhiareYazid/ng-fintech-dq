@@ -1,0 +1,28 @@
+sources:
+  - name: dq_audit
+    schema: dq_audit
+    description: Written by scripts/publish_dq_results.py after every dbt build. Append-only, one run_id per build.
+    tables:
+      - name: rule_results
+        description: One row per DQ rule per run, with rows checked, rows failed, sample keys and value affected.
+      - name: contract_results
+        description: One row per non-rule test (silver contracts, seed checks) per run.
+
+models:
+  - name: gold_dq_rule_results_history
+    description: Every rule result from every run, with pass rate and status (PASS / TOLERATED / BREACH).
+  - name: gold_dq_rule_results
+    description: Rule results for the latest run. The input to the scorecard, issue log and rule library export.
+    columns:
+      - name: rule_id
+        data_tests: [unique, not_null]
+  - name: gold_dq_scorecard
+    description: >
+      DQ scorecard for the latest run at every grain: dataset x dimension, dataset
+      total (dimension = 'ALL'), dimension total (dataset = 'ALL') and overall
+      ('ALL', 'ALL'). Score is the severity-weighted mean rule pass rate; RAG
+      applies the critical-breach override.
+  - name: gold_dq_score_trend
+    description: Overall score and breaches per run, for trend lines.
+  - name: gold_dq_contract_results
+    description: Silver contract test outcomes for the latest run.

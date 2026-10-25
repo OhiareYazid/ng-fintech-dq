@@ -1,0 +1,24 @@
+bank_code,bank_name,institution_type
+011,First Bank of Nigeria,Commercial bank
+023,Citibank Nigeria,Commercial bank
+030,Heritage Bank,Commercial bank
+032,Union Bank of Nigeria,Commercial bank
+033,United Bank for Africa,Commercial bank
+035,Wema Bank,Commercial bank
+044,Access Bank,Commercial bank
+050,Ecobank Nigeria,Commercial bank
+057,Zenith Bank,Commercial bank
+058,Guaranty Trust Bank,Commercial bank
+068,Standard Chartered Bank,Commercial bank
+070,Fidelity Bank,Commercial bank
+076,Polaris Bank,Commercial bank
+082,Keystone Bank,Commercial bank
+100,SunTrust Bank,Commercial bank
+101,Providus Bank,Commercial bank
+103,Globus Bank,Commercial bank
+214,First City Monument Bank,Commercial bank
+215,Unity Bank,Commercial bank
+221,Stanbic IBTC Bank,Commercial bank
+232,Sterling Bank,Commercial bank
+301,Jaiz Bank,Non-interest bank
+990,NairaRails MFB (fictional),Microfinance bank

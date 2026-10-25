@@ -1,0 +1,49 @@
+# Source conformity monitors on the raw extract. Not scored: silver
+# standardises these values, so a failure here is not a defect in what gold
+# sees. They measure how much cleaning each source needs and are the evidence
+# for asking source teams to fix formats at capture (a data contract).
+
+models:
+  - name: brz_customers
+    description: Customer extract as received (all text) plus lineage columns.
+    columns:
+      - name: phone_number
+        data_tests:
+          - dq_matches_regex:
+              name: dq_cus_007_raw_phone_in_e164
+              arguments:
+                pattern: '^\+234[789][01][0-9]{8}$'
+              config:
+                meta:
+                  rule_id: DQ-CUS-007
+                  rule_name: Phone captured in E.164 at source
+                  dimension: validity
+                  dataset: customers
+                  severity: low
+                  action: MONITOR
+                  scored: false
+                  owner: Customer Onboarding & KYC
+                  key: customer_id
+                  why: Measures standardisation load; the fix is an input mask in the onboarding apps.
+
+  - name: brz_transactions
+    description: Transaction extract as received (all text) plus lineage columns.
+    columns:
+      - name: status
+        data_tests:
+          - dq_accepted_values:
+              name: dq_txn_006_raw_status_canonical
+              arguments:
+                values: [SUCCESSFUL, FAILED, PENDING, REVERSED]
+              config:
+                meta:
+                  rule_id: DQ-TXN-006
+                  rule_name: Status sent in the canonical vocabulary at source
+                  dimension: validity
+                  dataset: transactions
+                  severity: low
+                  action: MONITOR
+                  scored: false
+                  owner: Payments Engineering
+                  key: transaction_id
+                  why: Measures standardisation load; the fix is a status mapping owned by each integration.

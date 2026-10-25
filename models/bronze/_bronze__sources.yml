@@ -1,0 +1,20 @@
+sources:
+  - name: raw
+    description: >
+      Landing zone. Daily CSV extracts from four source systems plus a batch
+      control file, read straight from disk as text (all_varchar) so a malformed
+      value can never break ingestion.
+    config:
+      meta:
+        external_location: "read_csv('data/raw/{name}.csv', header = true, all_varchar = true)"
+    tables:
+      - name: customers
+        description: Core banking CIF extract (one row per customer profile).
+      - name: accounts
+        description: Core banking account extract (CDC; may contain re-delivered rows).
+      - name: terminals
+        description: POS terminal registry from the terminal management system (TMS).
+      - name: transactions
+        description: Transaction events from the POS switch, NIP gateway, USSD aggregator, card processor and bills hub.
+      - name: batch_control
+        description: Control file declaring the record count and extract time of each file in the batch.

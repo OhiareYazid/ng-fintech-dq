@@ -1,0 +1,156 @@
+# Rule library: feed-level rules. Freshness (timeliness) against the SLA seed, and
+# volume completeness against the batch control file. One row per feed, so a
+# rule's "rows checked" is the number of feeds or channels it covers.
+
+models:
+  - name: stg_feed_heartbeat
+    description: Hours since each feed (and each transaction channel) last delivered, against its SLA.
+    data_tests:
+      - dq_expression_is_true:
+          name: dq_cus_013_customers_feed_fresh
+          arguments:
+            expression: "coalesce(hours_since_last_load, 1e9) <= sla_hours"
+          config:
+            where: "dataset = 'customers'"
+            meta:
+              rule_id: DQ-CUS-013
+              rule_name: Customer extract delivered within 24h
+              dimension: freshness
+              dataset: customers
+              severity: high
+              action: MONITOR
+              owner: Customer Onboarding & KYC
+              key: partition_key
+              why: Stale CIF data means new customers are missing from limits and AML screening.
+      - dq_expression_is_true:
+          name: dq_acc_006_accounts_feed_fresh
+          arguments:
+            expression: "coalesce(hours_since_last_load, 1e9) <= sla_hours"
+          config:
+            where: "dataset = 'accounts'"
+            meta:
+              rule_id: DQ-ACC-006
+              rule_name: Account extract delivered within 24h
+              dimension: freshness
+              dataset: accounts
+              severity: high
+              action: MONITOR
+              owner: Core Banking Operations
+              key: partition_key
+              why: New accounts would appear as orphans in the transaction feed.
+      - dq_expression_is_true:
+          name: dq_trm_005_terminal_registry_fresh
+          arguments:
+            expression: "coalesce(hours_since_last_load, 1e9) <= sla_hours"
+          config:
+            where: "dataset = 'terminals'"
+            meta:
+              rule_id: DQ-TRM-005
+              rule_name: Terminal registry delivered within 24h
+              dimension: freshness
+              dataset: terminals
+              severity: high
+              action: MONITOR
+              owner: Agency Banking Operations
+              key: partition_key
+              why: Newly activated terminals are missing, so their cash-outs fail the registry check.
+      - dq_expression_is_true:
+          name: dq_txn_018_transactions_feed_fresh
+          arguments:
+            expression: "coalesce(hours_since_last_load, 1e9) <= sla_hours"
+          config:
+            where: "dataset = 'transactions' and partition_key = 'ALL'"
+            meta:
+              rule_id: DQ-TXN-018
+              rule_name: Transaction feed delivered within 2h (table level)
+              dimension: freshness
+              dataset: transactions
+              severity: critical
+              action: MONITOR
+              owner: Payments Engineering
+              key: partition_key
+              why: Intraday liquidity, fraud and agent dashboards read this feed.
+      - dq_expression_is_true:
+          name: dq_txn_019_every_channel_fresh
+          arguments:
+            expression: "coalesce(hours_since_last_load, 1e9) <= sla_hours"
+          config:
+            where: "dataset = 'transactions' and partition_key <> 'ALL'"
+            meta:
+              rule_id: DQ-TXN-019
+              rule_name: Every transaction channel delivered within its SLA
+              dimension: freshness
+              dataset: transactions
+              severity: high
+              action: MONITOR
+              owner: Payments Engineering
+              key: partition_key
+              why: A dead channel is invisible to a table-level check while the other channels keep the max timestamp fresh.
+
+  - name: stg_batch_reconciliation
+    description: Rows received per file vs the record count declared in the batch control file.
+    data_tests:
+      - dq_expression_is_true:
+          name: dq_cus_014_customers_count_matches_control
+          arguments:
+            expression: "received_count = expected_count"
+          config:
+            where: "dataset = 'customers'"
+            meta:
+              rule_id: DQ-CUS-014
+              rule_name: Customer file row count matches control total
+              dimension: completeness
+              dataset: customers
+              severity: high
+              action: MONITOR
+              owner: Customer Onboarding & KYC
+              key: dataset
+              why: A short file means customers are silently missing downstream.
+      - dq_expression_is_true:
+          name: dq_acc_007_accounts_count_matches_control
+          arguments:
+            expression: "received_count = expected_count"
+          config:
+            where: "dataset = 'accounts'"
+            meta:
+              rule_id: DQ-ACC-007
+              rule_name: Account file row count matches control total
+              dimension: completeness
+              dataset: accounts
+              severity: high
+              action: MONITOR
+              owner: Core Banking Operations
+              key: dataset
+              why: A short file means accounts are silently missing downstream.
+      - dq_expression_is_true:
+          name: dq_trm_006_terminals_count_matches_control
+          arguments:
+            expression: "received_count = expected_count"
+          config:
+            where: "dataset = 'terminals'"
+            meta:
+              rule_id: DQ-TRM-006
+              rule_name: Terminal file row count matches control total
+              dimension: completeness
+              dataset: terminals
+              severity: medium
+              action: MONITOR
+              owner: Agency Banking Operations
+              key: dataset
+              why: A short file means terminals are silently missing downstream.
+      - dq_expression_is_true:
+          name: dq_txn_022_transactions_count_matches_control
+          arguments:
+            expression: "received_count = expected_count"
+          config:
+            where: "dataset = 'transactions'"
+            meta:
+              rule_id: DQ-TXN-022
+              rule_name: Transaction file row count matches control total
+              dimension: completeness
+              dataset: transactions
+              severity: critical
+              action: MONITOR
+              owner: Payments Engineering
+              key: dataset
+              why: Missing rows are missing money; every downstream total is understated with no visible error.

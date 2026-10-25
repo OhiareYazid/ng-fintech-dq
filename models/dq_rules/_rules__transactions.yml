@@ -1,0 +1,287 @@
+# Rule library: transactions (POS switch, NIP gateway, USSD, card, bills).
+
+models:
+  - name: stg_transactions
+    description: Transaction events, typed and standardised, every source row kept (duplicates included).
+    columns:
+      - name: transaction_id
+        data_tests:
+          - dq_not_null:
+              name: dq_txn_001_transaction_id_present
+              config:
+                meta:
+                  rule_id: DQ-TXN-001
+                  rule_name: Transaction ID present
+                  dimension: completeness
+                  dataset: transactions
+                  severity: critical
+                  action: QUARANTINE
+                  owner: Payments Engineering
+                  why: Without an ID a transaction cannot be deduplicated, disputed or reconciled.
+          - dq_unique:
+              name: dq_txn_002_transaction_id_unique
+              config:
+                meta:
+                  rule_id: DQ-TXN-002
+                  rule_name: Transaction ID unique
+                  dimension: uniqueness
+                  dataset: transactions
+                  severity: critical
+                  action: DEDUPE
+                  owner: Payments Engineering
+                  why: Repeated IDs inflate volume and value; silver keeps the latest version of each ID.
+
+      - name: amount
+        data_tests:
+          - dq_not_null:
+              name: dq_txn_003_amount_present
+              config:
+                meta:
+                  rule_id: DQ-TXN-003
+                  rule_name: Amount present
+                  dimension: completeness
+                  dataset: transactions
+                  severity: critical
+                  action: QUARANTINE
+                  owner: Payments Engineering
+                  why: A transaction with no amount cannot be posted, settled or reported.
+
+      - name: status
+        data_tests:
+          - dq_accepted_values:
+              name: dq_txn_005_status_valid
+              arguments:
+                values: [SUCCESSFUL, FAILED, PENDING, REVERSED]
+              config:
+                meta:
+                  rule_id: DQ-TXN-005
+                  rule_name: Status recognised (after standardisation)
+                  dimension: validity
+                  dataset: transactions
+                  severity: high
+                  action: QUARANTINE
+                  owner: Payments Engineering
+                  why: Unknown status means we cannot tell whether money moved, so success rate and value are unreliable.
+
+      - name: channel
+        data_tests:
+          - dq_accepted_values:
+              name: dq_txn_007_channel_valid
+              arguments:
+                values: [POS, TRANSFER, USSD, CARD, BILLS]
+              config:
+                meta:
+                  rule_id: DQ-TXN-007
+                  rule_name: Channel recognised
+                  dimension: validity
+                  dataset: transactions
+                  severity: high
+                  action: QUARANTINE
+                  owner: Payments Engineering
+                  why: Channel drives fee rules, limits and every channel-level KPI.
+
+      - name: account_id
+        data_tests:
+          - dq_relationships:
+              name: dq_txn_008_account_exists
+              arguments:
+                to: ref('stg_accounts')
+                field: account_id
+              config:
+                meta:
+                  rule_id: DQ-TXN-008
+                  rule_name: Transaction account exists
+                  dimension: referential_integrity
+                  dataset: transactions
+                  severity: critical
+                  action: QUARANTINE
+                  owner: Payments Engineering
+                  why: Money moved against an account we do not hold; it cannot be attributed, limited or reconciled.
+
+      - name: terminal_id
+        data_tests:
+          - dq_relationships:
+              name: dq_txn_009_terminal_registered
+              arguments:
+                to: ref('stg_terminals')
+                field: terminal_id
+              config:
+                meta:
+                  rule_id: DQ-TXN-009
+                  rule_name: POS terminal exists in registry
+                  dimension: referential_integrity
+                  dataset: transactions
+                  severity: high
+                  action: FLAG
+                  owner: Agency Banking Operations
+                  why: Cash-outs on unregistered terminals cannot be attributed to an agent for commission or fraud monitoring.
+          - dq_not_null:
+              name: dq_txn_010_terminal_id_present_for_pos
+              config:
+                where: "channel = 'POS'"
+                meta:
+                  rule_id: DQ-TXN-010
+                  rule_name: POS transaction carries a terminal ID
+                  dimension: completeness
+                  dataset: transactions
+                  severity: high
+                  action: FLAG
+                  owner: Agency Banking Operations
+                  why: A POS transaction with no terminal cannot be traced to an agent or a device.
+
+      - name: session_id
+        data_tests:
+          - dq_not_null:
+              name: dq_txn_020_session_id_present_for_transfers
+              config:
+                where: "channel = 'TRANSFER'"
+                meta:
+                  rule_id: DQ-TXN-020
+                  rule_name: NIP transfer carries a session ID
+                  dimension: completeness
+                  dataset: transactions
+                  severity: high
+                  action: FLAG
+                  owner: Payments Engineering
+                  why: The NIP session ID is the reference used for NIBSS reconciliation and customer disputes.
+          - dq_unique:
+              name: dq_txn_012_session_id_unique_for_transfers
+              config:
+                where: "channel = 'TRANSFER'"
+                meta:
+                  rule_id: DQ-TXN-012
+                  rule_name: One NIP session, one transaction
+                  dimension: uniqueness
+                  dataset: transactions
+                  severity: critical
+                  action: QUARANTINE
+                  owner: Settlement & Reconciliation
+                  why: Two ledger postings for one NIP session is a double debit; the customer has been charged twice.
+
+      - name: counterparty_bank_code
+        data_tests:
+          - dq_relationships:
+              name: dq_txn_013_counterparty_bank_known
+              arguments:
+                to: ref('ref_banks')
+                field: bank_code
+              config:
+                where: "channel = 'TRANSFER'"
+                meta:
+                  rule_id: DQ-TXN-013
+                  rule_name: Transfer counterparty bank code is a known CBN code
+                  dimension: referential_integrity
+                  dataset: transactions
+                  severity: medium
+                  action: FLAG
+                  owner: Payments Engineering
+                  why: Unknown bank codes break inter-bank settlement reporting and NIBSS reconciliation.
+
+      - name: _row_hash
+        data_tests:
+          - dq_unique:
+              name: dq_txn_021_no_exact_duplicate_payloads
+              config:
+                meta:
+                  rule_id: DQ-TXN-021
+                  rule_name: No exact duplicate payloads (double ingestion)
+                  dimension: uniqueness
+                  dataset: transactions
+                  severity: medium
+                  action: DEDUPE
+                  owner: Payments Engineering
+                  key: transaction_id
+                  why: Separates true re-deliveries from legitimate status updates that share a transaction ID (DQ-TXN-002).
+
+    data_tests:
+      - dq_expression_is_true:
+          name: dq_txn_004_amount_positive
+          arguments:
+            expression: "amount > 0"
+          config:
+            meta:
+              rule_id: DQ-TXN-004
+              rule_name: Amount greater than zero
+              dimension: validity
+              dataset: transactions
+              severity: critical
+              action: QUARANTINE
+              owner: Payments Engineering
+              why: Direction carries the sign; zero or negative amounts double-reverse when summed.
+      - dq_expression_is_true:
+          name: dq_txn_011_created_at_plausible
+          arguments:
+            expression: "created_at >= timestamp '2020-01-01' and created_at <= batch_as_of + interval 10 minute"
+          config:
+            meta:
+              rule_id: DQ-TXN-011
+              rule_name: Transaction time between 2020 and the batch cut-off
+              dimension: validity
+              dataset: transactions
+              severity: high
+              action: QUARANTINE
+              owner: Agency Banking Operations
+              why: 1970 and future-dated transactions land in the wrong reporting day, or no day at all.
+      - dq_expression_is_true:
+          name: dq_txn_014_settled_after_created
+          arguments:
+            expression: "settled_at >= created_at"
+          config:
+            meta:
+              rule_id: DQ-TXN-014
+              rule_name: Settled at or after creation
+              dimension: consistency
+              dataset: transactions
+              severity: medium
+              action: FLAG
+              owner: Settlement & Reconciliation
+              why: Negative settlement lag points at a timezone mismatch, which shifts transactions across settlement days.
+      - dq_expression_is_true:
+          name: dq_txn_015_fee_not_above_amount
+          arguments:
+            expression: "fee <= amount"
+          config:
+            where: "amount > 0"
+            meta:
+              rule_id: DQ-TXN-015
+              rule_name: Fee not larger than the amount
+              dimension: consistency
+              dataset: transactions
+              severity: high
+              action: QUARANTINE
+              owner: Finance - Revenue Assurance
+              why: Fee income is overstated and the customer may have been overcharged.
+
+  - name: int_transactions_enriched
+    description: Staged transactions joined to account, KYC tier, terminal and bank context for cross-table rules.
+    data_tests:
+      - dq_expression_is_true:
+          name: dq_txn_016_amount_within_kyc_tier_limit
+          arguments:
+            expression: "amount <= single_txn_limit_ngn"
+          config:
+            meta:
+              rule_id: DQ-TXN-016
+              rule_name: Amount within the KYC tier single-transaction limit
+              dimension: consistency
+              dataset: transactions
+              severity: high
+              action: QUARANTINE
+              owner: Partnerships (USSD)
+              key: transaction_id
+              why: Either a limit breach (compliance) or an amount in the wrong unit; both misstate value.
+      - dq_expression_is_true:
+          name: dq_txn_017_no_debits_after_account_closure
+          arguments:
+            expression: "not (account_status = 'CLOSED' and direction = 'DR' and status = 'SUCCESSFUL' and created_at > account_closed_at)"
+          config:
+            meta:
+              rule_id: DQ-TXN-017
+              rule_name: No successful debits after account closure
+              dimension: consistency
+              dataset: transactions
+              severity: high
+              action: FLAG
+              owner: Cards
+              key: transaction_id
+              why: A debit on a closed account is a control failure (card not hot-listed) and a likely customer complaint.

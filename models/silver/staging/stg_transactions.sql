@@ -1,0 +1,22 @@
+select
+    nullif(trim(transaction_id), '')            as transaction_id,
+    nullif(trim(session_id), '')                as session_id,
+    nullif(trim(account_id), '')                as account_id,
+    nullif(trim(terminal_id), '')               as terminal_id,
+    upper(nullif(trim(channel), ''))            as channel,
+    upper(nullif(trim(direction), ''))          as direction,
+    try_cast(amount as decimal(18, 2))          as amount,
+    try_cast(fee as decimal(18, 2))             as fee,
+    upper(nullif(trim(currency), ''))           as currency,
+    {{ standardize_txn_status('status') }}      as status,
+    status                                      as status_raw,
+    nullif(trim(counterparty_bank_code), '')    as counterparty_bank_code,
+    nullif(trim(counterparty_account), '')      as counterparty_account,
+    nullif(trim(narration), '')                 as narration,
+    try_cast(created_at as timestamp)           as created_at,
+    try_cast(settled_at as timestamp)           as settled_at,
+    nullif(trim(source_system), '')             as source_system,
+    try_cast(_ingested_at as timestamp)         as ingested_at,
+    _row_hash,
+    {{ dq_as_of() }}                            as batch_as_of
+from {{ ref('brz_transactions') }}

@@ -1,0 +1,14 @@
+models:
+  - name: gold_daily_channel_summary
+    description: Daily transaction count, value, success rate and fee income by channel, built from clean silver only.
+    columns:
+      - name: txn_date
+        data_tests: [not_null]
+      - name: channel
+        data_tests: [not_null]
+
+  - name: gold_agent_performance
+    description: POS agent league table. Unregistered terminals are kept and labelled rather than dropped.
+    columns:
+      - name: terminal_id
+        data_tests: [unique, not_null]

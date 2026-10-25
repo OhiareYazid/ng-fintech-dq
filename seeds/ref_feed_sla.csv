@@ -1,0 +1,10 @@
+dataset,partition_key,sla_hours,source_system,data_owner
+customers,ALL,24,Core banking CIF,Customer Onboarding & KYC
+accounts,ALL,24,Core banking,Core Banking Operations
+terminals,ALL,24,Terminal management system,Agency Banking Operations
+transactions,ALL,2,Transaction switch,Payments Engineering
+transactions,POS,2,POS switch,Agency Banking Operations
+transactions,TRANSFER,2,NIP gateway,Payments Engineering
+transactions,USSD,4,USSD aggregator,Partnerships (USSD)
+transactions,CARD,6,Card processor,Cards
+transactions,BILLS,6,Bills hub,Payments Engineering

@@ -1,0 +1,439 @@
+# Issue triage register: the human half of the issue log.
+#
+# The pipeline detects (which rule, how many rows, how much money, sample keys).
+# A DQ analyst triages: what caused it, who owns the fix, what it costs the
+# business, how to stop it recurring. scripts/render_reports.py joins the two
+# into reports/issue_log.md. A rule that breaches with no entry here appears in
+# the log as NEW / untriaged. An entry whose rules all pass is marked for closure.
+#
+# Priority: P1 = money or regulatory exposure now, fix within 1 business day
+#           P2 = misstated reporting or a broken control, fix this sprint
+#           P3 = degraded data, fix in the backlog with a date
+#           P4 = cosmetic or tolerated, monitor
+# Status:   OPEN -> IN_REMEDIATION -> MONITORING -> RESOLVED | RISK_ACCEPTED
+
+issues:
+  - issue_id: ISS-001
+    title: Customers debited twice for one NIP transfer
+    rules: [DQ-TXN-012]
+    priority: P1
+    status: IN_REMEDIATION
+    owner: Settlement & Reconciliation
+    root_cause: >
+      The mobile app retries a transfer that timed out with a new transaction ID
+      but the same NIP session ID. The ledger's idempotency key is the transaction
+      ID, so both legs post.
+    impact: >
+      Each affected customer was debited twice; the failing-row value covers both
+      legs, so half of it is money taken in error. Direct complaint, refund and
+      CBN consumer-protection exposure.
+    remediation: >
+      Second legs are quarantined in silver. Reversal batch raised with Settlement
+      for every session in the sample; customers to be refunded and notified.
+    prevention: >
+      Make the NIP session ID the ledger idempotency key. Keep DQ-TXN-012 at
+      critical and page on any breach.
+    related: []
+
+  - issue_id: ISS-002
+    title: USSD amounts arriving in kobo (100x overstated)
+    rules: [DQ-TXN-016]
+    priority: P1
+    status: OPEN
+    owner: Partnerships (USSD)
+    root_cause: >
+      The USSD aggregator's v2 API reports amounts in minor units (kobo). The
+      integration still treats the field as naira. Every failing row is a USSD
+      debit from a tier 1/2 account, and divided by 100 every amount falls back
+      inside the tier limit and the normal USSD ticket size.
+    impact: >
+      Reported value for the affected rows is 100x the real value. Had they reached
+      gold, USSD value and total value for the period would be materially overstated,
+      and the rows also look like KYC limit breaches.
+    remediation: >
+      Rows quarantined. Confirm units with the aggregator, divide by 100, replay
+      through silver.
+    prevention: >
+      Data contract with the aggregator that names the currency unit, plus a
+      per-channel amount distribution check to catch the next unit change.
+    related: [ISS-003]
+
+  - issue_id: ISS-003
+    title: USSD feed silent for 30 hours
+    rules: [DQ-TXN-019]
+    priority: P1
+    status: OPEN
+    owner: Partnerships (USSD)
+    root_cause: >
+      The aggregator's SFTP credentials expired and no files have been pushed
+      since. Table-level freshness (DQ-TXN-018) still passes because POS and
+      transfers keep the latest timestamp fresh; only the per-channel check fires.
+    impact: >
+      USSD activity for more than a day is missing from dashboards, fraud
+      monitoring and agent commission. Day-close totals are understated.
+    remediation: >
+      Rotate credentials, request a backfill from the last delivered file, reload.
+    prevention: >
+      Alert on per-channel freshness, not just table freshness. Track credential
+      expiry dates for every external feed.
+    related: [ISS-002]
+
+  - issue_id: ISS-004
+    title: Transaction extract truncated (fewer rows than control total)
+    rules: [DQ-TXN-022]
+    priority: P1
+    status: OPEN
+    owner: Payments Engineering
+    root_cause: >
+      The control file declares more rows than were received. The extract was cut
+      off mid-transfer and the loader does not compare against the control file.
+    impact: >
+      Missing rows are missing money. Every downstream total for the batch is
+      understated, with no error anywhere else in the pipeline.
+    remediation: Re-request the full extract and reload the batch.
+    prevention: >
+      Make the control-total check a gate: reject the batch before bronze when the
+      counts do not reconcile.
+    related: []
+
+  - issue_id: ISS-005
+    title: Transactions ingested twice
+    rules: [DQ-TXN-021, DQ-TXN-002]
+    priority: P2
+    status: MONITORING
+    owner: Payments Engineering
+    root_cause: >
+      The switch retries its webhook after a 504 and the consumer does not dedupe
+      on transaction ID, so identical payloads land twice (DQ-TXN-021). DQ-TXN-002
+      fails on more rows than that because this feed is change data capture:
+      a PENDING row followed by a SUCCESSFUL row for the same ID is expected.
+    impact: >
+      Contained: silver keeps the latest version of each transaction ID, so gold is
+      not double counted. Raw-layer consumers (ad-hoc SQL on bronze) would be.
+    remediation: Dedupe in silver (live). Consumer idempotency fix raised with Payments Engineering.
+    prevention: >
+      Tune the rules: point DQ-TXN-002 at the latest-version view, or make it unique
+      on (transaction_id, status), so it stops counting legitimate status updates.
+      DQ-TXN-021 stays as the true double-ingestion signal.
+    related: []
+
+  - issue_id: ISS-006
+    title: Transactions posted to accounts that do not exist
+    rules: [DQ-TXN-008]
+    priority: P2
+    status: OPEN
+    owner: Payments Engineering
+    root_cause: >
+      Every failing row comes from a non-transfer channel and carries an account ID
+      outside the core banking range: wallet IDs from a decommissioned ledger that
+      the bills hub still routes to.
+    impact: >
+      Money moved that cannot be attributed to a customer, limited by KYC tier or
+      reconciled. Quarantined.
+    remediation: Map legacy wallet IDs to current accounts with Core Banking Ops, then replay.
+    prevention: Retire the legacy routing table in the bills hub.
+    related: []
+
+  - issue_id: ISS-007
+    title: Terminal registry 52 hours stale, so new terminals look unregistered
+    rules: [DQ-TRM-005, DQ-TXN-009]
+    priority: P2
+    status: OPEN
+    owner: Agency Banking Operations
+    root_cause: >
+      The TMS export job has failed silently since the weekend. Terminals activated
+      after the last good snapshot are transacting but are not in the registry, so
+      their POS transactions fail the referential check. The integrity failure is a
+      symptom of the freshness failure, not a separate defect.
+    impact: >
+      Cash-outs on these terminals cannot be attributed to an agent for commission
+      or fraud monitoring until the registry refreshes. Transactions are kept
+      (FLAG), so volume and value are not understated.
+    remediation: Fix and re-run the TMS export. The flagged transactions resolve on the next load.
+    prevention: >
+      Freshness alert on the registry. Fix the root cause first: chasing the
+      "orphan" transactions one by one would have wasted a day.
+    related: []
+
+  - issue_id: ISS-008
+    title: Reversal advices with missing or signed amounts
+    rules: [DQ-TXN-003, DQ-TXN-004]
+    priority: P2
+    status: OPEN
+    owner: Payments Engineering
+    root_cause: >
+      The processor sends some reversal advices with a null amount and others with
+      a negative amount instead of direction = CR.
+    impact: >
+      Cannot post or settle null amounts. Negative amounts double-reverse when
+      summed with direction. All quarantined.
+    remediation: Re-request the advices; map signed reversals to a positive amount with direction CR.
+    prevention: Schema contract with the processor (amount > 0, not null) and reject at ingestion.
+    related: []
+
+  - issue_id: ISS-009
+    title: Unmapped processor status codes
+    rules: [DQ-TXN-005]
+    priority: P2
+    status: OPEN
+    owner: Payments Engineering
+    root_cause: >
+      Raw processor response codes ('99') and 'UNKNOWN' pass through without
+      mapping. Spelling variants (Success, successful) are already standardised in
+      silver and tracked separately as source conformity (DQ-TXN-006).
+    impact: Cannot tell whether money moved; success rate and value exclude these until resolved.
+    remediation: Get final status from the processor and replay.
+    prevention: Status mapping table owned by each integration, with unknowns rejected at ingestion.
+    related: [ISS-028]
+
+  - issue_id: ISS-010
+    title: Settlement timestamps one hour behind (UTC vs WAT)
+    rules: [DQ-TXN-014]
+    priority: P2
+    status: OPEN
+    owner: Settlement & Reconciliation
+    root_cause: >
+      Every failing row is settled 56 to 60 minutes before it was created, which
+      is a normal settlement lag minus one hour: the settlement service writes UTC
+      while the switch writes West Africa Time (UTC+1).
+    impact: >
+      Transactions near midnight fall into the wrong settlement day, which breaks
+      daily reconciliation with NIBSS and the card schemes.
+    remediation: Convert settlement timestamps to WAT in silver once the source is confirmed.
+    prevention: Store timestamps as timestamptz end to end; add the timezone to the data contract.
+    related: []
+
+  - issue_id: ISS-011
+    title: Fees posted in kobo
+    rules: [DQ-TXN-015]
+    priority: P2
+    status: OPEN
+    owner: Finance - Revenue Assurance
+    root_cause: The pricing engine posted some fees in kobo, so the fee exceeds the transaction amount.
+    impact: Fee income overstated; customers may have been overcharged. Quarantined.
+    remediation: Recompute fees from the tariff table and refund any overcharge.
+    prevention: Fee-to-amount ratio check in the pricing engine before posting.
+    related: [ISS-002]
+
+  - issue_id: ISS-012
+    title: Successful debits on closed accounts
+    rules: [DQ-TXN-017]
+    priority: P2
+    status: OPEN
+    owner: Cards
+    root_cause: Cards were not hot-listed when their account was closed, so card debits still authorise.
+    impact: >
+      Control failure and likely complaints. Transactions are kept (they happened)
+      and flagged for Cards and Compliance.
+    remediation: Hot-list all cards on closed accounts; review each flagged debit.
+    prevention: Make card hot-listing a step in the account closure workflow.
+    related: [ISS-025]
+
+  - issue_id: ISS-013
+    title: POS terminals with wrong clocks (1970 and future dates)
+    rules: [DQ-TXN-011]
+    priority: P3
+    status: OPEN
+    owner: Agency Banking Operations
+    root_cause: Terminal real-time clocks reset to the epoch (flat RTC battery) or were set by hand.
+    impact: Transactions fall outside any reporting day. Quarantined until re-dated from switch receipt time.
+    remediation: Re-date from switch receipt time; list affected terminals for field service.
+    prevention: Use switch receipt time as the event time of record; sync terminal clocks over NTP.
+    related: []
+
+  - issue_id: ISS-014
+    title: POS transactions with no terminal ID
+    rules: [DQ-TXN-010]
+    priority: P3
+    status: OPEN
+    owner: Agency Banking Operations
+    root_cause: Older terminal firmware drops ISO 8583 field 41 (terminal ID) on fallback transactions.
+    impact: Cannot attribute to an agent or device; flagged and excluded from the agent league table.
+    remediation: Recover the terminal ID from switch logs by STAN and RRN.
+    prevention: Firmware upgrade for the affected models.
+    related: []
+
+  - issue_id: ISS-015
+    title: Transfers to unknown bank codes
+    rules: [DQ-TXN-013]
+    priority: P3
+    status: OPEN
+    owner: Payments Engineering
+    root_cause: >
+      Leading zeros stripped ('58' for GTBank '058') and placeholder codes
+      ('000') on manually keyed transfers.
+    impact: Breaks inter-bank settlement reporting and NIBSS reconciliation for these rows. Flagged.
+    remediation: Left-pad numeric codes to 3 digits; resolve placeholders from the NIP response.
+    prevention: Treat bank codes as strings everywhere (the ref_banks seed is typed varchar for the same reason).
+    related: [ISS-024]
+
+  - issue_id: ISS-016
+    title: Tier 2/3 customers with no BVN
+    rules: [DQ-CUS-003]
+    priority: P1
+    status: OPEN
+    owner: Customer Onboarding & KYC
+    root_cause: Back-office tier upgrades by override, without BVN capture.
+    impact: >
+      Customers transacting at tier 2/3 limits without verified identity: a KYC
+      compliance finding.
+    remediation: Downgrade to tier 1 until a BVN is verified; outreach campaign through agents.
+    prevention: Remove the override; tier upgrade requires a verified BVN.
+    related: [ISS-017]
+
+  - issue_id: ISS-017
+    title: Malformed BVNs (truncated, scientific notation, letter O)
+    rules: [DQ-CUS-004]
+    priority: P2
+    status: OPEN
+    owner: Customer Onboarding & KYC
+    root_cause: A bulk KYC remediation file was round-tripped through Excel.
+    impact: These BVNs fail NIBSS verification and defeat the duplicate-identity check.
+    remediation: Re-pull from the original remediation source; re-verify with NIBSS.
+    prevention: Never move identifiers through Excel; load bulk files as text.
+    related: [ISS-016]
+
+  - issue_id: ISS-018
+    title: One BVN on two customer profiles
+    rules: [DQ-CUS-005]
+    priority: P2
+    status: OPEN
+    owner: Customer Onboarding & KYC
+    root_cause: >
+      Customers re-onboarded through a second agent. No BVN uniqueness check at
+      onboarding. The second profile is upper-cased and created later, consistent
+      with agent re-capture rather than fraud, but each pair needs review.
+    impact: Split customer view, double-counted customers, and potential KYC limit evasion across two profiles.
+    remediation: Review pairs, merge confirmed duplicates in CIF, escalate anything suspicious to Compliance.
+    prevention: BVN uniqueness check at onboarding.
+    related: []
+
+  - issue_id: ISS-019
+    title: Phone numbers that cannot be standardised
+    rules: [DQ-CUS-006]
+    priority: P3
+    status: OPEN
+    owner: Customer Onboarding & KYC
+    root_cause: Free-text phone field with no input mask on the agent onboarding form.
+    impact: OTPs and alerts do not reach these customers.
+    remediation: Collect correct numbers at next agent or app touchpoint.
+    prevention: Input mask and OTP verification at onboarding.
+    related: [ISS-028]
+
+  - issue_id: ISS-020
+    title: Implausible dates of birth
+    rules: [DQ-CUS-009]
+    priority: P3
+    status: OPEN
+    owner: Customer Onboarding & KYC
+    root_cause: The DOB widget fails on low-end Android devices and leaves the 1900-01-01 default.
+    impact: Age-based eligibility and KYC checks are wrong; possible under-age customers.
+    remediation: Verify DOB against the BVN record.
+    prevention: Fill DOB from the BVN record instead of manual entry.
+    related: []
+
+  - issue_id: ISS-021
+    title: State of residence is a city, typo or placeholder
+    rules: [DQ-CUS-008]
+    priority: P4
+    status: OPEN
+    owner: Customer Onboarding & KYC
+    root_cause: Free-text state field; agents type the city (Ikeja, Port Harcourt) or a placeholder.
+    impact: Minor distortion of regional reporting and AML geography scoring.
+    remediation: Add city-to-state aliases where unambiguous; re-collect the rest.
+    prevention: Dropdown of states at onboarding.
+    related: []
+
+  - issue_id: ISS-022
+    title: Malformed email addresses
+    rules: [DQ-CUS-011]
+    priority: P4
+    status: OPEN
+    owner: Customer Onboarding & KYC
+    root_cause: No email validation on the USSD and agent onboarding paths.
+    impact: Statements and e-receipts bounce.
+    remediation: Re-collect at the next touchpoint.
+    prevention: Format validation at capture.
+    related: []
+
+  - issue_id: ISS-023
+    title: Account rows delivered twice
+    rules: [DQ-ACC-001]
+    priority: P3
+    status: MONITORING
+    owner: Core Banking Operations
+    root_cause: A CDC batch was re-delivered after a connector timeout; the loader is not idempotent.
+    impact: Contained by the silver dedupe. Would fan out every join on account if read from bronze.
+    remediation: Dedupe in silver (live).
+    prevention: Idempotent loader (merge on account ID and change sequence).
+    related: [ISS-005]
+
+  - issue_id: ISS-024
+    title: Account numbers that fail the NUBAN check digit
+    rules: [DQ-ACC-003]
+    priority: P2
+    status: OPEN
+    owner: Core Banking Operations
+    root_cause: >
+      Two causes: manual capture during the 2024 core banking migration (wrong
+      check digit), and an extract re-saved in Excel, which stripped leading zeros
+      (9-digit numbers).
+    impact: Inbound NIP transfers to these numbers are rejected or misrouted.
+    remediation: Correct from the core banking master; left-pad the 9-digit numbers and re-validate.
+    prevention: NUBAN check-digit validation at capture; identifiers loaded as text.
+    related: [ISS-015]
+
+  - issue_id: ISS-025
+    title: Closed accounts with no closure date
+    rules: [DQ-ACC-004]
+    priority: P3
+    status: OPEN
+    owner: Core Banking Operations
+    root_cause: Closures done by status override instead of the closure workflow.
+    impact: The post-closure debit control (DQ-TXN-017) cannot run for these accounts, so ISS-012 may be undercounted.
+    remediation: Backfill closure dates from the audit trail.
+    prevention: Block status-only closures.
+    related: [ISS-012]
+
+  - issue_id: ISS-026
+    title: Accounts whose customer does not exist
+    rules: [DQ-ACC-002]
+    priority: P2
+    status: OPEN
+    owner: Core Banking Operations
+    root_cause: CIF records purged during the migration while their accounts were kept.
+    impact: Accounts with no KYC tier or AML profile; cannot be included in regulatory returns correctly.
+    remediation: Restore CIF records from the migration archive.
+    prevention: Foreign-key constraint between account and CIF in the core banking schema.
+    related: []
+
+  - issue_id: ISS-027
+    title: Terminal hardware and settlement registry defects
+    rules: [DQ-TRM-002, DQ-TRM-003]
+    priority: P2
+    status: OPEN
+    owner: Agency Banking Operations
+    root_cause: >
+      Devices swapped between agents without retiring the old terminal ID (shared
+      serials), and settlement accounts typed by hand in the TMS (account not found).
+    impact: >
+      Cash-outs can settle to the wrong agent (shared serials) or fail to settle
+      (unknown account). The unknown-account terminals had no transactions in this
+      batch, so that half has not cost money yet.
+    remediation: Retire superseded terminal IDs; correct settlement accounts from agent onboarding records.
+    prevention: TMS validation of settlement account against core banking at terminal setup.
+    related: [ISS-007]
+
+  - issue_id: ISS-028
+    title: Sources send phone numbers and statuses in their own formats
+    rules: [DQ-CUS-007, DQ-TXN-006]
+    priority: P4
+    status: RISK_ACCEPTED
+    owner: Data Governance
+    root_cause: No shared format standard across onboarding channels and processors.
+    impact: >
+      None downstream: silver standardises these. The cost is pipeline complexity
+      and the risk that a new variant slips past the mapping (see ISS-009).
+    remediation: None needed for reporting. Kept as monitors (not scored).
+    prevention: Publish format standards as part of each source's data contract.
+    related: [ISS-009, ISS-019]

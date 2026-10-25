@@ -1,0 +1,176 @@
+# Rule library: customers (core banking CIF).
+# Every rule is a dbt test carrying its catalogue entry in config.meta. Rules in
+# this folder run with severity "warn": they measure the feed, silver enforces.
+# Freshness and record-count rules live in _rules__feeds.yml.
+
+models:
+  - name: stg_customers
+    description: Customer profiles, typed and standardised, every source row kept.
+    columns:
+      - name: customer_id
+        data_tests:
+          - dq_not_null:
+              name: dq_cus_001_customer_id_present
+              config:
+                meta:
+                  rule_id: DQ-CUS-001
+                  rule_name: Customer ID present
+                  dimension: completeness
+                  dataset: customers
+                  severity: critical
+                  action: QUARANTINE
+                  owner: Customer Onboarding & KYC
+                  why: A profile with no CIF ID cannot be linked to accounts, KYC or AML screening.
+          - dq_unique:
+              name: dq_cus_002_customer_id_unique
+              config:
+                meta:
+                  rule_id: DQ-CUS-002
+                  rule_name: Customer ID unique
+                  dimension: uniqueness
+                  dataset: customers
+                  severity: critical
+                  action: DEDUPE
+                  owner: Customer Onboarding & KYC
+                  why: Two rows for one CIF ID double-count customers and break every join on customer.
+
+      - name: bvn
+        data_tests:
+          - dq_not_null:
+              name: dq_cus_003_bvn_present_for_tier_2_plus
+              config:
+                where: "kyc_tier >= 2"
+                meta:
+                  rule_id: DQ-CUS-003
+                  rule_name: BVN present for KYC tier 2 and 3
+                  dimension: completeness
+                  dataset: customers
+                  severity: high
+                  action: FLAG
+                  owner: Customer Onboarding & KYC
+                  why: Tiered KYC requires identity verification above tier 1; a tier 2/3 customer with no BVN is a regulatory finding.
+          - dq_matches_regex:
+              name: dq_cus_004_bvn_11_digits
+              arguments:
+                pattern: '^[0-9]{11}$'
+              config:
+                meta:
+                  rule_id: DQ-CUS-004
+                  rule_name: BVN is 11 digits
+                  dimension: validity
+                  dataset: customers
+                  severity: high
+                  action: FLAG
+                  owner: Customer Onboarding & KYC
+                  why: A malformed BVN fails NIBSS verification and silently defeats duplicate-identity checks.
+          - dq_unique:
+              name: dq_cus_005_bvn_unique_across_cifs
+              config:
+                meta:
+                  rule_id: DQ-CUS-005
+                  rule_name: One BVN, one customer profile
+                  dimension: uniqueness
+                  dataset: customers
+                  severity: high
+                  action: FLAG
+                  owner: Customer Onboarding & KYC
+                  why: A BVN on two CIFs is either a re-onboarded customer (split exposure, double counted) or identity misuse.
+
+      - name: phone_e164
+        data_tests:
+          - dq_matches_regex:
+              name: dq_cus_006_phone_valid_ng_mobile
+              arguments:
+                pattern: '^\+234[789][01][0-9]{8}$'
+              config:
+                meta:
+                  rule_id: DQ-CUS-006
+                  rule_name: Phone is a valid Nigerian mobile (after standardisation)
+                  dimension: validity
+                  dataset: customers
+                  severity: medium
+                  action: FLAG
+                  owner: Customer Onboarding & KYC
+                  why: OTPs, transaction alerts and collections all go to this number.
+
+      - name: state_of_residence
+        data_tests:
+          - dq_relationships:
+              name: dq_cus_008_state_is_nigerian_state
+              arguments:
+                to: ref('ref_states')
+                field: state_name
+              config:
+                meta:
+                  rule_id: DQ-CUS-008
+                  rule_name: State of residence is one of the 36 states or FCT
+                  dimension: validity
+                  dataset: customers
+                  severity: medium
+                  action: FLAG
+                  owner: Customer Onboarding & KYC
+                  why: Drives regional reporting, agent coverage planning and AML geography risk scoring.
+
+      - name: email
+        data_tests:
+          - dq_not_null:
+              name: dq_cus_010_email_present
+              config:
+                meta:
+                  rule_id: DQ-CUS-010
+                  rule_name: Email present (80% tolerance)
+                  dimension: completeness
+                  dataset: customers
+                  severity: low
+                  action: MONITOR
+                  threshold: 0.80
+                  owner: Customer Onboarding & KYC
+                  why: Email is optional on USSD and agent onboarding, so it is tracked against a tolerance, not zero defects.
+          - dq_matches_regex:
+              name: dq_cus_011_email_format
+              arguments:
+                pattern: '^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$'
+              config:
+                meta:
+                  rule_id: DQ-CUS-011
+                  rule_name: Email well formed
+                  dimension: validity
+                  dataset: customers
+                  severity: low
+                  action: FLAG
+                  owner: Customer Onboarding & KYC
+                  why: Statements and e-receipts bounce.
+
+      - name: kyc_tier
+        data_tests:
+          - dq_accepted_values:
+              name: dq_cus_012_kyc_tier_valid
+              arguments:
+                values: [1, 2, 3]
+                quote: false
+              config:
+                meta:
+                  rule_id: DQ-CUS-012
+                  rule_name: KYC tier is 1, 2 or 3
+                  dimension: validity
+                  dataset: customers
+                  severity: high
+                  action: FLAG
+                  owner: Customer Onboarding & KYC
+                  why: Tier sets the transaction and balance limits enforced downstream.
+
+    data_tests:
+      - dq_expression_is_true:
+          name: dq_cus_009_date_of_birth_plausible
+          arguments:
+            expression: "date_of_birth between (batch_as_of - interval 110 year)::date and (batch_as_of - interval 18 year)::date"
+          config:
+            meta:
+              rule_id: DQ-CUS-009
+              rule_name: Customer is 18 to 110 years old
+              dimension: validity
+              dataset: customers
+              severity: high
+              action: FLAG
+              owner: Customer Onboarding & KYC
+              why: Placeholder (1900-01-01), future and under-age birth dates break age-based KYC and product eligibility.

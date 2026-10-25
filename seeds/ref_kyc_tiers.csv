@@ -1,0 +1,4 @@
+kyc_tier,tier_name,single_txn_limit_ngn,daily_limit_ngn,max_balance_ngn,requirements
+1,Tier 1 - basic,50000,50000,300000,Name + phone; BVN optional
+2,Tier 2 - verified,100000,200000,500000,BVN or NIN verified
+3,Tier 3 - full KYC,5000000,25000000,,BVN + NIN + address verification

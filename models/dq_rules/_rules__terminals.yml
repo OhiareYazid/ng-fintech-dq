@@ -1,0 +1,71 @@
+# Rule library: POS terminal registry (terminal management system).
+
+models:
+  - name: stg_terminals
+    description: POS terminal registry, typed, every source row kept.
+    columns:
+      - name: terminal_id
+        data_tests:
+          - dq_unique:
+              name: dq_trm_001_terminal_id_unique
+              config:
+                meta:
+                  rule_id: DQ-TRM-001
+                  rule_name: Terminal ID unique
+                  dimension: uniqueness
+                  dataset: terminals
+                  severity: critical
+                  action: DEDUPE
+                  owner: Agency Banking Operations
+                  why: Terminal ID is the join key from every POS transaction to its agent.
+
+      - name: serial_number
+        data_tests:
+          - dq_unique:
+              name: dq_trm_002_serial_unique
+              config:
+                meta:
+                  rule_id: DQ-TRM-002
+                  rule_name: One device serial, one terminal ID
+                  dimension: uniqueness
+                  dataset: terminals
+                  severity: high
+                  action: FLAG
+                  owner: Agency Banking Operations
+                  why: A device on two terminal IDs means a swap that was never retired; settlement can go to the old agent.
+
+      - name: account_id
+        data_tests:
+          - dq_relationships:
+              name: dq_trm_003_settlement_account_exists
+              arguments:
+                to: ref('stg_accounts')
+                field: account_id
+              config:
+                meta:
+                  rule_id: DQ-TRM-003
+                  rule_name: Settlement account exists
+                  dimension: referential_integrity
+                  dataset: terminals
+                  severity: high
+                  action: FLAG
+                  owner: Agency Banking Operations
+                  why: Cash-outs on this terminal cannot be settled to the agent.
+
+      - name: state
+        data_tests:
+          - dq_relationships:
+              name: dq_trm_004_state_is_nigerian_state
+              arguments:
+                to: ref('ref_states')
+                field: state_name
+              config:
+                meta:
+                  rule_id: DQ-TRM-004
+                  rule_name: Terminal state is one of the 36 states or FCT
+                  dimension: validity
+                  dataset: terminals
+                  severity: medium
+                  action: FLAG
+                  owner: Agency Banking Operations
+                  why: Agent network coverage and cash-logistics planning are done by state.

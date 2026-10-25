@@ -1,0 +1,26 @@
+name: dq-pipeline
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      # Fails the job if a model errors or a silver contract test breaks.
+      # DQ rule breaches are expected (the data has planted defects) and only warn.
+      - run: python run_pipeline.py --as-of "2026-10-25 14:00"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dq-reports
+          path: |
+            reports/
+            docs/rule_library.md

@@ -1,0 +1,50 @@
+name: ng_fintech_dq
+version: "1.0.0"
+config-version: 2
+profile: ng_fintech_dq
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  # Fictional CBN code for NairaRails MFB; drives the NUBAN check-digit rule.
+  home_bank_code: "990"
+
+models:
+  ng_fintech_dq:
+    bronze:
+      +schema: bronze
+      +materialized: table
+    silver:
+      +schema: silver
+      +materialized: table
+    gold:
+      +schema: gold
+      +materialized: table
+      dq:
+        # Built after DQ results are published (see run_pipeline.py).
+        +tags: ["dq_reporting"]
+
+seeds:
+  ng_fintech_dq:
+    +schema: reference
+    ref_banks:
+      # Bank codes have leading zeros: never let them be inferred as integers.
+      +column_types: {bank_code: varchar}
+    ref_feed_sla:
+      +column_types: {sla_hours: double}
+
+data_tests:
+  ng_fintech_dq:
+    # Failing rows land in the dq_failures schema as evidence for the issue log.
+    +store_failures: true
+    +schema: dq_failures
+    dq_rules:
+      # DQ rules measure what the sources send; they never stop the pipeline.
+      # Enforcement happens in silver (dedupe / quarantine / flag) and the
+      # silver contract tests, which keep the default severity of error.
+      +severity: warn

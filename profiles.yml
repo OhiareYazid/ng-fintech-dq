@@ -1,0 +1,7 @@
+ng_fintech_dq:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: warehouse/ng_fintech_dq.duckdb
+      threads: 4

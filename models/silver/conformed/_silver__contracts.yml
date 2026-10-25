@@ -1,0 +1,89 @@
+# Silver contract. These are promises silver makes to gold, so they run at the
+# default severity (error): if one fails, dbt build stops before gold is touched.
+# They should always pass; the DQ rules in models/dq_rules are where defects show.
+
+models:
+  - name: slv_customers
+    description: One row per customer, with KYC and contact-data defects carried as flags (dq_flags).
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+      - name: bvn_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [OK, MISSING, INVALID_FORMAT, SHARED_WITH_ANOTHER_CIF]
+
+  - name: slv_accounts
+    description: One row per account (re-delivered CDC rows collapsed), defects carried as flags.
+    columns:
+      - name: account_id
+        data_tests: [unique, not_null]
+
+  - name: slv_terminals
+    description: One row per POS terminal, defects carried as flags.
+    columns:
+      - name: terminal_id
+        data_tests: [unique, not_null]
+
+  - name: slv_transactions
+    description: Deduplicated transactions that passed every quarantine rule. The only transaction source for gold.
+    columns:
+      - name: transaction_id
+        data_tests: [unique, not_null]
+      - name: amount
+        data_tests: [not_null]
+      - name: status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [SUCCESSFUL, FAILED, PENDING, REVERSED]
+      - name: channel
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [POS, TRANSFER, USSD, CARD, BILLS]
+      - name: account_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('slv_accounts')
+                field: account_id
+      - name: session_id
+        data_tests:
+          - unique:
+              config:
+                where: "channel = 'TRANSFER'"
+
+  - name: slv_transactions_quarantine
+    description: Transactions withheld from silver and the rule IDs that blocked them.
+    columns:
+      - name: quarantine_reasons
+        data_tests: [not_null]
+
+  - name: int_transactions_screened
+    description: Latest version of every transaction with its quarantine reasons and flags.
+    columns:
+      - name: transaction_id
+        data_tests: [unique]
+
+seeds:
+  - name: ref_state_aliases
+    description: Spellings seen in source systems mapped to the canonical state name.
+    columns:
+      - name: alias
+        data_tests: [unique, not_null]
+  - name: ref_banks
+    description: CBN bank codes (3-digit, as used in NUBAN).
+    columns:
+      - name: bank_code
+        data_tests: [unique, not_null]
+  - name: ref_states
+    description: The 36 states and the FCT with ISO 3166-2 codes and geopolitical zone.
+    columns:
+      - name: state_name
+        data_tests: [unique, not_null]
+  - name: ref_kyc_tiers
+    description: Illustrative transaction limits per KYC tier (modelled on the CBN three-tier framework).
+  - name: ref_feed_sla
+    description: Delivery SLA and accountable owner for each feed and transaction channel.
